@@ -1,42 +1,28 @@
-//authorization controller
+//how messages are handled
 
 import 'package:flutter/foundation.dart';
-import '../data/models/user_model.dart';
-import '../data/repositories/auth_repository.dart';
+import '../data/models/message_model.dart';
+import '../data/repositories/chat_repository.dart';
 
-class AuthController extends ChangeNotifier {
-  final AuthRepository _repo;
+class ChatController extends ChangeNotifier {
+  final ChatRepository _repo;
+  final String groupId;
+  final String uid;
 
-  UserModel? currentUser;
-  bool isLoading = false;
+  List<ChatMessage> messages = [];
 
-  AuthController(this._repo);
-//load user and sign out
-  Future<void> loadCurrentUser() async {
-    isLoading = true;
-    notifyListeners();
-
-    currentUser = await _repo.getCurrentUserProfile();
-
-    isLoading = false;
-    notifyListeners();
+  ChatController(this._repo, this.groupId, this.uid) {
+    _repo.watchMessages(groupId).listen((msgs) {
+      messages = msgs;
+      notifyListeners();
+    });
   }
 
-  Future<void> signIn(String email, String password) async {
-    isLoading = true;
-    notifyListeners();
-
-    await _repo.signInWithEmailAndPassword(
-      email: email,
-      password: password,
+  Future<void> sendMessage(String content) {
+    return _repo.sendMessage(
+      groupId: groupId,
+      senderId: uid,
+      content: content,
     );
-
-    await loadCurrentUser();
-  }
-
-  Future<void> signOut() async {
-    await _repo.signOut();
-    currentUser = null;
-    notifyListeners();
   }
 }
